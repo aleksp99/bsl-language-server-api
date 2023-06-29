@@ -24,18 +24,18 @@
 
 class AddInNative final : public Component {
 public:
-    const char *Version = u8"1.0.0";
+    const char *Version = u8"1.0.1";
 
     AddInNative();
 
 private:
     std::string extensionName() override;
-    std::string url;
+    std::wstring url;
 
     std::string wcharToMultiByte(const std::wstring& wstr);
     std::wstring multiByteToWchar(const std::string& str);
 
-    variant_t check(variant_t text);
+    variant_t check(variant_t& text);
 };
 
 #endif //ADDINNATIVE_H

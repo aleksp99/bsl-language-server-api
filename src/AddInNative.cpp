@@ -47,21 +47,19 @@ std::string AddInNative::extensionName() {
 
 std::string AddInNative::wcharToMultiByte(const std::wstring& wstr)
 {
-    DWORD locale = CP_UTF8;
     if (wstr.empty()) return {};
-    const int sz = WideCharToMultiByte(locale, 0, &wstr[0], (int)wstr.size(), 0, 0, 0, 0);
+    const int sz = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), 0, 0, 0, 0);
     std::string res(sz, 0);
-    WideCharToMultiByte(locale, 0, &wstr[0], (int)wstr.size(), &res[0], sz, 0, 0);
+    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &res[0], sz, 0, 0);
     return res;
 }
 
 std::wstring AddInNative::multiByteToWchar(const std::string& str)
 {
-    DWORD locale = CP_UTF8;
     if (str.empty()) return {};
-    const int sz = MultiByteToWideChar(locale, 0, &str[0], (int)str.size(), 0, 0);
+    const int sz = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), 0, 0);
     std::wstring res(sz, 0);
-    MultiByteToWideChar(locale, 0, &str[0], (int)str.size(), &res[0], sz);
+    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &res[0], sz);
     return res;
 }
 
@@ -70,55 +68,40 @@ AddInNative::AddInNative() {
     // Full featured property registration example
     AddProperty(L"Version", L"ВерсияКомпоненты", [&]() {return std::make_shared<variant_t>(std::move(std::string(Version))); });
 
-    AddProperty(L"URL", L"Адрес",
-        [&]() {return std::make_shared<variant_t>(std::move(std::string(url))); },
+   AddProperty(L"URL", L"Адрес",
+        [&]() {return std::make_shared<variant_t>(url.data()); },
         [&](variant_t value) {
-            std::wstring wURL = std::get<const wchar_t*>(value);
-            url = std::string(wURL.begin(), wURL.end());
+            url = std::wstring(std::get<const wchar_t*>(value));
     });
 
     AddMethod(L"Check", L"Проверять", this, &AddInNative::check);
 }
 
-struct {
-    double jsonrpc = 2.0;
-    std::string method = "textDocument/didOpen";
-    struct {
-        struct {
-            std::string uri = "inmemory://model/1";
-            std::string languageId = "bsl";
-            int version = 1;
-            std::wstring text;
-        } textDocument;
-    } params;
-} didOpen;
-
-struct {
-    double jsonrpc = 2.0;
-    std::string method = "textDocument/didOpen";
-    struct {
-        struct {
-            std::string uri = "inmemory://model/1";
-        } textDocument;
-    } params;
-} didClose;
-
-variant_t AddInNative::check(variant_t text) {
-    
+variant_t AddInNative::check(variant_t& text) {
     try
     {
-        boost::regex ex("(ws)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)");
-        boost::cmatch what;
-        if (!regex_match(url.c_str(), what, ex)) {
-            std::stringstream ss;
-            return std::string("Wrong URL: " + url);
-}
+        boost::wregex ex(L"(ws)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)");
+        boost::wcmatch what;
+        if (!regex_match(url.c_str(), what, ex))
+            return std::string("");
         std::string host = std::string(what[2].first, what[2].second);
         std::string port = std::string(what[3].first, what[3].second);
         std::string path = std::string(what[4].first, what[4].second);
 
-        std::wstring wDidOpen = L"{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didOpen\",\"params\":{\"textDocument\":{\"uri\":\"inmemory://model/1\",\"languageId\":\"bsl\",\"version\":1,\"text\":\"" + std::wstring(std::get<const wchar_t*>(text))  + L"\"}}}";
-        std::string didOpen = wcharToMultiByte(wDidOpen);
+        std::wstring value(std::get<const wchar_t*>(text));
+        std::map <std::wstring, std::wstring> mpEx;
+        mpEx[L"\\\""] = L"\\\\\"";
+        mpEx[L"/"] = L"\\\\/";
+        mpEx[L"\b"] = L"\\\\b";
+        mpEx[L"\f"] = L"\\\\f";
+        mpEx[L"\n"] = L"\\\\n";
+        mpEx[L"\r"] = L"\\\\r";
+        mpEx[L"\t"] = L"\\\\t";
+        // mpEx[L"\\\\"] = L"\\\\\\";
+        value = regex_replace(value, boost::wregex(L"\\\\"), L"\\\\\\");
+        for (auto& item : mpEx)
+            value = regex_replace(value, boost::wregex(item.first), item.second);
+        std::string didOpen = wcharToMultiByte(L"{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didOpen\",\"params\":{\"textDocument\":{\"uri\":\"inmemory://model/1\",\"languageId\":\"bsl\",\"version\":1,\"text\":\"" + value + L"\"}}}");
         std::string didClose = "{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didClose\",\"params\":{\"textDocument\":{\"uri\":\"inmemory://model/1\"}}}";
 
         // io_context требуется для всех операций ввода-вывода.
@@ -162,9 +145,6 @@ variant_t AddInNative::check(variant_t text) {
         std::stringstream ss;
         ss << beast::make_printable(buffer.data());
         return ss.str();
-}
-    catch (std::exception const& e) {
-        return e.what();
-}
-    return "";
+    }
+    catch (...) { return std::string(""); }
 }
