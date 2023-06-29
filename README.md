@@ -13,5 +13,5 @@ https://github.com/1c-syntax/bsl-language-server
 ПодключитьВнешнююКомпоненту("ОбщийМакет.BSL_LS_API", "BSLLS");
 BSL_LS = Новый("AddIn.BSLLS.BSLLanguageServerAPI");
 BSL_LS.Адрес = "ws://localhost:8025/lsp";
-СтрокаJSON = ВК.Проверять("1=1");
+СтрокаJSON = BSL_LS.Проверять("1=1");
 ```	
