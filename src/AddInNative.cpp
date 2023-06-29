@@ -66,7 +66,7 @@ std::wstring AddInNative::multiByteToWchar(const std::string& str)
 }
 
 AddInNative::AddInNative() {
-    
+
     // Full featured property registration example
     AddProperty(L"Version", L"ВерсияКомпоненты", [&]() {return std::make_shared<variant_t>(std::move(std::string(Version))); });
 
@@ -75,8 +75,8 @@ AddInNative::AddInNative() {
         [&](variant_t value) {
             std::wstring wURL = std::get<const wchar_t*>(value);
             url = std::string(wURL.begin(), wURL.end());
-        });
-    
+    });
+
     AddMethod(L"Check", L"Проверять", this, &AddInNative::check);
 }
 
@@ -112,7 +112,7 @@ variant_t AddInNative::check(variant_t text) {
         if (!regex_match(url.c_str(), what, ex)) {
             std::stringstream ss;
             return std::string("Wrong URL: " + url);
-        }
+}
         std::string host = std::string(what[2].first, what[2].second);
         std::string port = std::string(what[3].first, what[3].second);
         std::string path = std::string(what[4].first, what[4].second);
@@ -162,9 +162,9 @@ variant_t AddInNative::check(variant_t text) {
         std::stringstream ss;
         ss << beast::make_printable(buffer.data());
         return ss.str();
-    }
+}
     catch (std::exception const& e) {
         return e.what();
-    }
+}
     return "";
 }
