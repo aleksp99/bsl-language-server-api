@@ -1,15 +1,11 @@
-# AddIn.Parser
+# AddIn.BSL_LS_API
 
 ## AddinTemplate - шаблон внешней компоненты 1С:
 https://github.com/Infactum/addin-template  
 https://github.com/lintest/AddinTemplate  
 
-## BSL:
-https://github.com/1c-syntax/bsl-parser
-
-
-## ANTLR4:  
-java -jar antlr-4.9.12-complete.jar -Dlanguage=Cpp BSLLexer.g4
+## BSL-Language-Server:
+https://github.com/1c-syntax/bsl-language-server
 
 ## 1С:  
 ```
